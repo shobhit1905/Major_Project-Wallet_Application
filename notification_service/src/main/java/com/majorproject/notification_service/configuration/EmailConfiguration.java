@@ -13,10 +13,10 @@ public class EmailConfiguration {
     @Bean
     public JavaMailSender javaMailSender(){
         JavaMailSenderImpl javaMailSender = new JavaMailSenderImpl();
-        javaMailSender.setHost("smtp.rediffmail.com");
+        javaMailSender.setHost("smtp.gmail.com");
         javaMailSender.setPort(587);
-        javaMailSender.setUsername("rickchaudhurizoom@rediffmail.com");
-        javaMailSender.setPassword("Kolkata@2003");
+        javaMailSender.setUsername("snautiyal2021@gmail.com");
+        javaMailSender.setPassword("arxyfqwqyiufqypu");
 
         Properties properties = javaMailSender.getJavaMailProperties();
         properties.put("mail.smtp.starttls.enable", true);
