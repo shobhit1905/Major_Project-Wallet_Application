@@ -24,7 +24,7 @@ public class Wallet {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long walletId ;
 
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private Long userId ;
 
     private Double walletBalance ;

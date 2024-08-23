@@ -9,12 +9,10 @@ import com.majorproject.user_service.model.User;
 import com.majorproject.user_service.service.UserService;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.coyote.Response;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -27,6 +25,7 @@ public class UserController {
 
     @Autowired
     private UserService userService;
+
 
     @PostMapping
     public ResponseEntity<UserResponseDTO> createNewUser(@RequestBody @Valid User user){
@@ -130,7 +129,7 @@ public class UserController {
     }
 
     @DeleteMapping("delete-user/{id}")
-    public ResponseEntity<String> deleteUSerById(@PathVariable("id") Long id){
+    public ResponseEntity<String> deleteUserById(@PathVariable("id") Long id){
         try{
             Boolean deleted = userService.deleteUserById(id) ;
             if(deleted){
@@ -145,6 +144,25 @@ public class UserController {
         catch(RuntimeException e){
             log.error("Not able to delete user , Exception occurred : " + e.getMessage()) ;
             return new ResponseEntity<>(null , HttpStatus.NOT_ACCEPTABLE) ;
+        }
+    }
+
+    @GetMapping("username/{userName}")
+    public ResponseEntity<User> getUserByUserName(@PathVariable("userName") String userName){
+        try{
+            User u = userService.getUserByName(userName) ;
+            if(u != null){
+                log.info("Information retrieved successfully for user : " + userName);
+                return new ResponseEntity<>(u , HttpStatus.FOUND);
+            }
+            else{
+                log.error("No user found with name : " + userName);
+                return new ResponseEntity<>(null , HttpStatus.NOT_FOUND);
+            }
+        }
+        catch(RuntimeException e){
+            log.error("Not able to retrieve information for user , Exception occurred : " + e.getMessage()) ;
+            return new ResponseEntity<>(null , HttpStatus.INTERNAL_SERVER_ERROR) ;
         }
     }
 }

@@ -32,6 +32,8 @@ public class UserService {
     @Autowired
     private ObjectMapper objectMapper;
 
+
+
     public UserResponseDTO createNewUser(User user) throws JsonProcessingException {
         User newUser = userRepository.save(user) ;
         Map<String,String> walletCreationRequest = Map.of("userId" , newUser.getUserId().toString() , "userName" , newUser.getUserFullName()) ;
@@ -91,6 +93,10 @@ public class UserService {
 
         userRepository.delete(u);
         return true ;
+    }
+
+    public User getUserByName(String userName){
+        return userRepository.findUserByName(userName);
     }
 
 }
