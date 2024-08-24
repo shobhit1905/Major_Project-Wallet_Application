@@ -165,4 +165,9 @@ public class UserController {
             return new ResponseEntity<>(null , HttpStatus.INTERNAL_SERVER_ERROR) ;
         }
     }
+
+    @GetMapping("/userExistence/{userId}")
+    public ResponseEntity<Boolean> checkForUserExistence(@PathVariable("userId") Long userId){
+        return new ResponseEntity<>(userService.checkForUserExistence(userId) , HttpStatus.OK) ;
+    }
 }

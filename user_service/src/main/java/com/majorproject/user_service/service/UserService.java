@@ -99,4 +99,7 @@ public class UserService {
         return userRepository.findUserByName(userName);
     }
 
+    public Boolean checkForUserExistence(Long userId) {
+        return userRepository.existsById(userId) ;
+    }
 }
