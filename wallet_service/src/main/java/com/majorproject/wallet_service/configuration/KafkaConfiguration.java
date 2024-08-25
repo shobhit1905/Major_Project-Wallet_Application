@@ -2,6 +2,8 @@ package com.majorproject.wallet_service.configuration;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.majorproject.jbdl_wallet_library.DTO.InitiateTransactionDTO;
+import com.majorproject.jbdl_wallet_library.DTO.UserWalletCreationRequest;
 import com.majorproject.jbdl_wallet_library.constants.TopicConstants;
 import com.majorproject.wallet_service.service.WalletService;
 import lombok.extern.slf4j.Slf4j;
@@ -20,12 +22,21 @@ public class KafkaConfiguration {
     private ObjectMapper objectMapper;
 
     @Autowired
-    private WalletService walletService ;
+    private WalletService walletService;
 
-    @KafkaListener(topics = TopicConstants.USER_CREATION_TOPIC , groupId = "user_service.walletCreation")
+    @KafkaListener(topics = TopicConstants.USER_CREATION_TOPIC, groupId = "user_service.walletCreation")
     public void pollMessageForUserCreation(ConsumerRecord receivedMessage) throws JsonProcessingException {
-        Map<String,String> receivedData = objectMapper.readValue(receivedMessage.value().toString() , Map.class) ;
-        log.info("Received Data : {}" , receivedData.get("userId"));
-        walletService.createWalletForNewUser(receivedData) ;
+        UserWalletCreationRequest receivedData = objectMapper.readValue(receivedMessage.value().toString(), UserWalletCreationRequest.class);
+        log.info("Received Data : {}", receivedData.toString());
+        walletService.createWalletForNewUser(receivedData);
+    }
+
+    @KafkaListener(topics = TopicConstants.INITIATE_TRANSACTION_TOPIC, groupId = "successful_transaction")
+    public void pollMessageForBalanceUpdate(ConsumerRecord receivedMessage) throws JsonProcessingException {
+        InitiateTransactionDTO receivedData = objectMapper.readValue(receivedMessage.value().toString(), InitiateTransactionDTO.class);
+        log.info("Received Data : {}", receivedData);
+        walletService.updateBalanceForUsers(receivedData);
     }
 }
+
+

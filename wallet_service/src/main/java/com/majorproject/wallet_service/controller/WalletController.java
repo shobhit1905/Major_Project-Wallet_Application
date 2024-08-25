@@ -77,20 +77,38 @@ public class WalletController {
         }
     }
 
-    @GetMapping("userWallet/{userName}")
-    public ResponseEntity<Wallet> getWalletDetailsUsingUserName(@PathVariable("userName") String userName){
+//    @GetMapping("userWallet/{userName}")
+//    public ResponseEntity<Wallet> getWalletDetailsUsingUserName(@PathVariable("userName") String userName){
+//        try{
+//            Wallet w = walletService.getWalletUsingUserName(userName);
+//            if (w == null) {
+//                log.error("No wallet exists for user : " + userName);
+//                return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
+//            } else {
+//                log.info(w.toString());
+//                return new ResponseEntity<>(w, HttpStatus.FOUND);
+//            }
+//        }
+//        catch(RuntimeException e){
+//            log.error("Not able to retrieve wallet for user : " + userName + " , Exception occurred : " + e.getMessage());
+//            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+//        }
+//    }
+
+    @GetMapping("/balance/fetchBalance/{userId}")
+    public ResponseEntity<Double> getBalance(@PathVariable("userId") Long userId){
         try{
-            Wallet w = walletService.getWalletUsingUserName(userName);
-            if (w == null) {
-                log.error("No wallet exists for user : " + userName);
+            Double balance = walletService.getUserBalance(userId);
+            if (balance == null) {
+                log.error("No user exist for the id : " + userId);
                 return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
             } else {
-                log.info(w.toString());
-                return new ResponseEntity<>(w, HttpStatus.FOUND);
+                log.info(balance.toString());
+                return new ResponseEntity<>(balance, HttpStatus.FOUND);
             }
         }
-        catch(RuntimeException e){
-            log.error("Not able to retrieve wallet for user : " + userName + " , Exception occurred : " + e.getMessage());
+        catch(Exception e){
+            log.error("Not able to retrieve balance for user , Exception occurred : " + e.getMessage());
             return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }

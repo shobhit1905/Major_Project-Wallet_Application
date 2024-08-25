@@ -2,6 +2,7 @@ package com.majorproject.user_service.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.majorproject.jbdl_wallet_library.DTO.UserWalletCreationRequest;
 import com.majorproject.jbdl_wallet_library.constants.TopicConstants;
 import com.majorproject.user_service.DTO.UpdateUserAddressDTO;
 import com.majorproject.user_service.DTO.UpdateUserEmail;
@@ -36,11 +37,16 @@ public class UserService {
 
     public UserResponseDTO createNewUser(User user) throws JsonProcessingException {
         User newUser = userRepository.save(user) ;
-        Map<String,String> walletCreationRequest = Map.of("userId" , newUser.getUserId().toString() , "userName" , newUser.getUserFullName()) ;
-        String message  = String.format("Account created for user\nName : %s\nId : %s" , newUser.getUserFullName(),newUser.getUserId()) ;
-        log.info(message) ;
+        log.info(String.format("User account is created for UserId: %d and UserName: %s", newUser.getUserId(),newUser.getUserFullName()));
+
+        UserWalletCreationRequest userWalletCreationRequest = UserWalletCreationRequest.builder()
+                .userId(newUser.getUserId())
+                .userName(newUser.getUserFullName())
+                .userEmailId(newUser.getUserEmail())
+                .build() ;
+
         Future<SendResult<String, String>> send = kafkaTemplate.send(TopicConstants.USER_CREATION_TOPIC
-        , newUser.getUserId().toString() , objectMapper.writeValueAsString(walletCreationRequest)) ;
+        , newUser.getUserId().toString() , objectMapper.writeValueAsString(userWalletCreationRequest)) ;
         return UserResponseDTO.builder()
                 .message("User account created , Wallet creation in progress , we will notify you over mail once its done")
                 .user(newUser)

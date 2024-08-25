@@ -170,4 +170,5 @@ public class UserController {
     public ResponseEntity<Boolean> checkForUserExistence(@PathVariable("userId") Long userId){
         return new ResponseEntity<>(userService.checkForUserExistence(userId) , HttpStatus.OK) ;
     }
+
 }

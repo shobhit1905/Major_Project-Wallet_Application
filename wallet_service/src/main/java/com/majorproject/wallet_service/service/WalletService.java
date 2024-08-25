@@ -2,9 +2,14 @@ package com.majorproject.wallet_service.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.majorproject.jbdl_wallet_library.DTO.InitiateTransactionDTO;
 import com.majorproject.jbdl_wallet_library.DTO.SendMailNotification;
+import com.majorproject.jbdl_wallet_library.DTO.SuccessfulTransactionDTO;
+import com.majorproject.jbdl_wallet_library.DTO.UserWalletCreationRequest;
 import com.majorproject.jbdl_wallet_library.constants.TopicConstants;
+import com.majorproject.jbdl_wallet_library.enums.PaymentStatus;
 import com.majorproject.jbdl_wallet_library.enums.ServiceType;
+import com.majorproject.notification_service.templates.MailsTemplates;
 import com.majorproject.user_service.model.User;
 import com.majorproject.user_service.service.UserService;
 import com.majorproject.wallet_service.entity.Wallet;
@@ -14,6 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
 import java.util.Map;
@@ -32,33 +38,30 @@ public class WalletService {
     @Autowired
     private ObjectMapper objectMapper ;
 
-    private UserService userService ;
+    @Autowired
+    private RestTemplate restTemplate ;
 
 
-    public void createWalletForNewUser(Map<String,String> receivedData) throws JsonProcessingException {
-        Long userId = Long.parseLong(receivedData.get("userId"));
+    public void createWalletForNewUser(UserWalletCreationRequest receivedData) throws JsonProcessingException {
+        Long userId = receivedData.getUserId();
         Wallet wallet = new Wallet(userId) ;
         log.info(String.format("Wallet for user : %d , created successfully\n" +
                 "Details of the wallet are : %s" , userId , wallet.toString())) ;
 
-        Wallet w = walletRepository.save(wallet) ;
+        Wallet newCreatedWallet = walletRepository.save(wallet) ;
 
-        log.info(String.format("Saved wallet details are : %s" , w.toString())) ;
+        log.info("Saved wallet details for userId : %d \n are : %s" , userId, newCreatedWallet) ;
 
         SendMailNotification sendMailNotification = SendMailNotification.builder()
-                .receiverMailId("shobhitnautiyal979665@gmail.com")
-                .message(String.format("Hi %s \n Your wallet account is created \n " +
-                        "Now you have access to all the features\n" +
-                        "Your daily limit is 100000 \n " +
-                        "Your daily transaction limit is 10 \n" +
-                        "You can update this anytime you want" , receivedData.get("userName")))
+                .receiverMailId(receivedData.getUserEmailId())
+                .message(String.format(MailsTemplates.getWalletCreationbody().getMailBody() , receivedData.getUserName()))
                 .serviceType(ServiceType.WALLET_SERVICE)
-                .subject("New wallet onboarding")
+                .subject(MailsTemplates.getWalletCreationbody().getMailSubject())
                 .build() ;
 
         Future<SendResult<String, String>> send;
         send = kafkaTemplate.send(TopicConstants.SEND_NOTIFICATION_TOPIC,
-                w.getUserId().toString() ,
+                newCreatedWallet.getUserId().toString() ,
                 objectMapper.writeValueAsString(sendMailNotification));
     }
 
@@ -78,11 +81,42 @@ public class WalletService {
         return walletRepository.findById(walletId).orElse(null) ;
     }
 
-    public Wallet getWalletUsingUserName(String userName){
-        User user = userService.getUserByName(userName) ;
+//    public Wallet getWalletUsingUserName(String userName){
+//        User user = userService.getUserByName(userName) ;
+//        if(user == null)
+//            return null ;
+//        Long userId = user.getUserId() ;
+//        return walletRepository.findByUserId(userId) ;
+//    }
+
+    public Double getUserBalance(Long userId){
+        User user = restTemplate.getForEntity("http://localhost:8081/wallet-user/" + userId, User.class).getBody() ;
         if(user == null)
             return null ;
-        Long userId = user.getUserId() ;
-        return walletRepository.findByUserId(userId) ;
+
+        Wallet wallet = walletRepository.findByUserId(userId) ;
+        return wallet.getWalletBalance() ;
+    }
+
+    public void updateBalanceForUsers(InitiateTransactionDTO receivedData) throws JsonProcessingException {
+        Long senderId = receivedData.getSenderID() ;
+        Long receiverId = receivedData.getReceiverId();
+
+        Wallet sender = walletRepository.findByUserId(senderId) ;
+        Wallet receiver = walletRepository.findByUserId(receiverId) ;
+
+        sender.setWalletBalance(sender.getWalletBalance() - receivedData.getAmount()) ;
+        receiver.setWalletBalance(receiver.getWalletBalance() + receivedData.getAmount()) ;
+
+        walletRepository.save(sender) ;
+        walletRepository.save(receiver) ;
+
+        SuccessfulTransactionDTO successfulTransactionDTO = SuccessfulTransactionDTO.builder()
+                .transactionID(receivedData.getTransactionId())
+                .paymentStatus(PaymentStatus.SUCCESSFUL)
+                .build() ;
+
+        Future<SendResult<String, String>> send = kafkaTemplate.send(TopicConstants.SUCCESSFUL_TRANSACTION_TOPIC, receivedData.getTransactionId()
+                , objectMapper.writeValueAsString(successfulTransactionDTO)) ;
     }
 }

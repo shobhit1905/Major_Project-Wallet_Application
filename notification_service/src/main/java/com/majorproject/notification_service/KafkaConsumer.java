@@ -23,10 +23,7 @@ public class KafkaConsumer {
     @KafkaListener(topics = TopicConstants.SEND_NOTIFICATION_TOPIC , groupId = "send_notification")
     public void sendNotification(ConsumerRecord receivedMessage) throws JsonProcessingException {
         SendMailNotification sendNotification = objectMapper.readValue(receivedMessage.value().toString() , SendMailNotification.class);
-        log.info(String.format("Received Notification from Service : %s with Message : %s",
-                sendNotification.getServiceType().name(),
-                sendNotification.toString()));
-
+        log.info("Received Notification from Service : {} with Message : {}", sendNotification.getServiceType().name(), sendNotification);
         sendMail.sendMail(sendNotification);
     }
 }
