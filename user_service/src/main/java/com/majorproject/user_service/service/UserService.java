@@ -3,6 +3,7 @@ package com.majorproject.user_service.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.majorproject.jbdl_wallet_library.DTO.UserWalletCreationRequest;
+import com.majorproject.jbdl_wallet_library.DTO.WalletDeleteDTO;
 import com.majorproject.jbdl_wallet_library.constants.TopicConstants;
 import com.majorproject.user_service.DTO.UpdateUserAddressDTO;
 import com.majorproject.user_service.DTO.UpdateUserEmail;
@@ -15,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
 import java.util.Map;
@@ -33,7 +35,8 @@ public class UserService {
     @Autowired
     private ObjectMapper objectMapper;
 
-
+    @Autowired
+    private RestTemplate restTemplate;
 
     public UserResponseDTO createNewUser(User user) throws JsonProcessingException {
         User newUser = userRepository.save(user) ;
@@ -97,8 +100,20 @@ public class UserService {
         if(u == null)
             return false ;
 
-        userRepository.delete(u);
-        return true ;
+        WalletDeleteDTO dto = restTemplate.getForObject("http://localhost:8091/wallet-wallet/getWallet/user/" + id, WalletDeleteDTO.class);
+        if(dto == null)
+            throw new RuntimeException("Not able to delete wallet information , please try after sometime") ;
+
+        Boolean walletDeleted = restTemplate.getForObject("http://localhost:8091/wallet-wallet/deleteWallet/" + dto.getWalletId(), Boolean.class);
+
+        if(Boolean.TRUE.equals(walletDeleted)){
+            log.info("Wallet deleted successfully , now proceeding to delete user data");
+            userRepository.deleteById(id);
+            return true ;
+        }
+        else{
+            throw new RuntimeException("Not able to delete wallet information , please try after sometime") ;
+        }
     }
 
     public User getUserByName(String userName){

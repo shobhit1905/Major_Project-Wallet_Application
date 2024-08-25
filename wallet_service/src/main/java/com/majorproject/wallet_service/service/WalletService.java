@@ -2,10 +2,7 @@ package com.majorproject.wallet_service.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.majorproject.jbdl_wallet_library.DTO.InitiateTransactionDTO;
-import com.majorproject.jbdl_wallet_library.DTO.SendMailNotification;
-import com.majorproject.jbdl_wallet_library.DTO.SuccessfulTransactionDTO;
-import com.majorproject.jbdl_wallet_library.DTO.UserWalletCreationRequest;
+import com.majorproject.jbdl_wallet_library.DTO.*;
 import com.majorproject.jbdl_wallet_library.constants.TopicConstants;
 import com.majorproject.jbdl_wallet_library.enums.PaymentStatus;
 import com.majorproject.jbdl_wallet_library.enums.ServiceType;
@@ -118,5 +115,26 @@ public class WalletService {
 
         Future<SendResult<String, String>> send = kafkaTemplate.send(TopicConstants.SUCCESSFUL_TRANSACTION_TOPIC, receivedData.getTransactionId()
                 , objectMapper.writeValueAsString(successfulTransactionDTO)) ;
+    }
+
+    public Boolean deleteWalletById(Long walletId){
+        Wallet wallet = walletRepository.findById(walletId).orElse(null) ;
+        if(wallet == null)
+            return false ;
+
+        walletRepository.delete(wallet) ;
+        return true ;
+    }
+
+    public WalletDeleteDTO getWalletDeleteDTO(Long userId){
+        Wallet wallet = walletRepository.findByUserId(userId) ;
+        if(wallet == null)
+            return null ;
+
+        return WalletDeleteDTO.builder()
+                .walletId(wallet.getWalletId())
+                .userId(userId)
+                .build();
+
     }
 }

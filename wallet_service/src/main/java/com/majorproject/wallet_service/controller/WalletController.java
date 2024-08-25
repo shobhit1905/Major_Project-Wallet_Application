@@ -1,15 +1,13 @@
 package com.majorproject.wallet_service.controller;
 
+import com.majorproject.jbdl_wallet_library.DTO.WalletDeleteDTO;
 import com.majorproject.wallet_service.entity.Wallet;
 import com.majorproject.wallet_service.service.WalletService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -109,6 +107,44 @@ public class WalletController {
         }
         catch(Exception e){
             log.error("Not able to retrieve balance for user , Exception occurred : " + e.getMessage());
+            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @GetMapping("deleteWallet/{walletId}")
+    public ResponseEntity<Boolean> deleteWalletById(@PathVariable("walletId") Long walletId){
+        try{
+            Boolean deleted = walletService.deleteWalletById(walletId) ;
+            if(deleted){
+                log.info("Wallet deleted successfully for wallet id : " + walletId);
+                return new ResponseEntity<>(true, HttpStatus.OK);
+            }
+            else{
+                log.error("No wallet exist for id : " + walletId);
+                return new ResponseEntity<>(false, HttpStatus.NOT_FOUND);
+            }
+        }
+        catch(RuntimeException e){
+            log.error("Not able to retrieve wallet information for delete operation , Exception occurred : " + e.getMessage());
+            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @GetMapping("getWallet/user/{userId}")
+    public ResponseEntity<WalletDeleteDTO> getWalletDeleteDTO(@PathVariable("userId") Long userId){
+        try{
+            WalletDeleteDTO dto = walletService.getWalletDeleteDTO(userId) ;
+            if(dto == null){
+                log.error("No user exists with userId : " + userId);
+                return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
+            }
+            else{
+                log.info("Retrieved wallet information");
+                 return new ResponseEntity<>(dto, HttpStatus.FOUND);
+            }
+        }
+        catch(RuntimeException e){
+            log.error("Not able to retrieve wallet information for delete operation , Exception occurred : " + e.getMessage());
             return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
