@@ -9,6 +9,8 @@ import com.majorproject.jbdl_wallet_library.enums.ServiceType;
 import com.majorproject.notification_service.templates.MailsTemplates;
 import com.majorproject.user_service.model.User;
 import com.majorproject.user_service.service.UserService;
+import com.majorproject.wallet_service.DTO.UpdateBalanceDTO;
+import com.majorproject.wallet_service.DTO.UpdateMoneyLimit;
 import com.majorproject.wallet_service.entity.Wallet;
 import com.majorproject.wallet_service.repository.WalletRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -135,6 +137,34 @@ public class WalletService {
                 .walletId(wallet.getWalletId())
                 .userId(userId)
                 .build();
+
+    }
+
+    public Boolean updateDailyMoneyLimit(UpdateMoneyLimit dto){
+        User user = restTemplate.getForEntity("http://localhost:8081/wallet-user/" + dto.getUserId(), User.class).getBody() ;
+        if(user == null)
+            return null ;
+
+        Wallet w = walletRepository.findByUserId(dto.getUserId()) ;
+        w.setDailyLimit(dto.getNewLimit());
+        walletRepository.save(w) ;
+        return true ;
+    }
+
+    public Boolean updateWalletBalance(UpdateBalanceDTO updateBalanceDTO) {
+        try{
+            User user = restTemplate.getForEntity("http://localhost:8081/wallet-user/" + updateBalanceDTO.getUserId(), User.class).getBody();
+            if(user == null)
+                return false ;
+
+            Wallet w = walletRepository.findByUserId(updateBalanceDTO.getUserId()) ;
+            w.setWalletBalance(w.getWalletBalance() + updateBalanceDTO.getAmount()) ;
+            walletRepository.save(w) ;
+            return true ;
+        }
+        catch(Exception e){
+            return false ;
+        }
 
     }
 }

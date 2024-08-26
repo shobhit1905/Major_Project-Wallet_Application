@@ -137,4 +137,8 @@ public class TransactionService {
         return senderAndReceiver ;
 
     }
+
+    public Transaction getTransactionDetailsUsingId(String transactionId) {
+        return transactionRepository.findById(transactionId).orElse(null);
+    }
 }
